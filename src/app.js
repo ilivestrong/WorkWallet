@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { sequelize } = require('./model')
 const { getProfile } = require('./middleware/getProfile')
-const { Op } = require('sequelize');
+const { Sequelize, Op } = require('sequelize');
 const app = express();
 app.use(bodyParser.json());
 app.set('sequelize', sequelize)
@@ -161,7 +161,57 @@ app.post('/balances/deposit/:userId', async (req, res) => {
         t.rollback();
         return res.status(500).send(toAPIResponse('error', 'failed to deposit money. ' + error.message));
     }
-})
+});
+
+/**
+ * 
+ * @returns contract by id
+ */
+app.get('/admin/best-profession', async (req, res) => {
+    const { Profile, Contract, Job } = req.app.get('models');
+    const { start, end } = req.query;
+
+    const startDate = new Date(start + 'T00:00:00.000Z').toISOString();
+    const endDate = new Date(end + 'T23:59:59.999Z').toISOString();
+
+    try {
+        const professionsByEarnings = await Profile.findAll({
+            attributes: [
+                'profession',
+                [Sequelize.fn('SUM', Sequelize.col('Contractor.Jobs.price')), 'totalEarnings']
+            ],
+            include: [{
+                model: Contract,
+                as: 'Contractor',
+                attributes: [],
+                include: [{
+                    model: Job,
+                    attributes: [],
+                    where: {
+                        paid: true,
+                        paymentDate: {
+                            [Op.between]: [startDate, endDate]
+                        }
+                    },
+                    required: true
+                }]
+            }],
+            group: ['Profile.profession'],
+            order: [[Sequelize.literal('totalEarnings'), 'DESC']],
+            limit: 1,
+            subQuery: false
+        });
+
+        if (professionsByEarnings.length > 0) {
+            let topProfession = professionsByEarnings[0]['profession'];
+            return res.status(200).send(toAPIResponse('topProfession', topProfession));
+        }
+        return res.status(404).send(toAPIResponse('error', "no data found"));
+    } catch (error) {
+        res.status(500).send(toAPIResponse('error', 'error finding top profession', error));
+        throw error;
+    }
+});
 
 function toAPIResponse(field, data) {
     return {
