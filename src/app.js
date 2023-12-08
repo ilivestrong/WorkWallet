@@ -119,6 +119,50 @@ app.post('/jobs/:job_id/pay', async (req, res) => {
     }
 });
 
+/**
+ * 
+ * @returns contract by id
+ */
+app.post('/balances/deposit/:userId', async (req, res) => {
+    const { Contract, Profile, Job } = req.app.get('models');
+    const { userId } = req.params;
+    const { amount } = req.body;
+    const t = await sequelize.transaction();
+
+    try {
+        const contracts = await Contract.findAll(
+            {
+                include: { model: Job, where: { paid: null }, lock: true },
+                where: { ClientId: userId },
+                transaction: t,
+                lock: true,
+            });
+
+        const totalUnpaid = contracts.reduce((sum, contract) => {
+            return sum + contract.Jobs.reduce((jobSum, job) => jobSum + job.price, 0);
+        }, 0);
+
+        const maxDeposit = totalUnpaid * 0.25;
+        if (amount > maxDeposit) {
+            return res.status(500).send(toAPIResponse('error', 'Deposit exceeds the maximum allowed limit '));
+        }
+
+        let profile = await Profile.findByPk(userId, { transaction: t, lock: true });
+
+        profile.balance += amount;
+        await profile.save({
+            transaction: t,
+            lock: true
+        })
+        t.commit();
+
+        return res.status(200).send(toAPIResponse('success', true));
+    } catch (error) {
+        t.rollback();
+        return res.status(500).send(toAPIResponse('error', 'failed to deposit money. ' + error.message));
+    }
+})
+
 function toAPIResponse(field, data) {
     return {
         result: {
