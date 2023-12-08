@@ -170,9 +170,7 @@ app.post('/balances/deposit/:userId', async (req, res) => {
 app.get('/admin/best-profession', async (req, res) => {
     const { Profile, Contract, Job } = req.app.get('models');
     const { start, end } = req.query;
-
-    const startDate = new Date(start + 'T00:00:00.000Z').toISOString();
-    const endDate = new Date(end + 'T23:59:59.999Z').toISOString();
+    const [startDate, endDate] = toUTCDates(start, end)
 
     try {
         const professionsByEarnings = await Profile.findAll({
@@ -183,7 +181,6 @@ app.get('/admin/best-profession', async (req, res) => {
             include: [{
                 model: Contract,
                 as: 'Contractor',
-                attributes: [],
                 include: [{
                     model: Job,
                     attributes: [],
@@ -212,6 +209,60 @@ app.get('/admin/best-profession', async (req, res) => {
         throw error;
     }
 });
+
+/**
+ * 
+ * @returns contract by id
+ */
+app.get('/admin/best-clients', async (req, res) => {
+    const { Profile, Contract, Job } = req.app.get('models');
+    const { start, end, limit = 2 } = req.query;
+
+   const [startDate, endDate] = toUTCDates(start, end)
+
+    try {
+        const topPayingClients = await Profile.findAll({
+            attributes: [
+                'id',
+                [Sequelize.literal(`"firstName" || ' ' || "lastName"`), 'fullName'],
+                [Sequelize.fn('SUM', Sequelize.col('Client.Jobs.price')), 'paid']
+            ],
+            include: [{
+                model: Contract,
+                as: 'Client',
+                attributes: [],
+                include: [{
+                    model: Job,
+                    attributes: [],
+                    where: {
+                        paid: true,
+                        paymentDate: { [Op.between]: [startDate, endDate] }
+                    },
+                    required: true
+                }]
+            }],
+            where: {
+                '$Client.Jobs.id$': { [Op.ne]: null }
+            },
+            group: ['Profile.id'],
+            order: [[Sequelize.literal('paid'), 'DESC']],
+            limit,
+            subQuery: false
+        });
+
+        return res.status(200).send(topPayingClients);
+    } catch (error) {
+        res.status(500).send(toAPIResponse('error', 'error finding best client', error))
+        throw error;
+    }
+});
+
+function toUTCDates(start, end) {
+    const startDate = new Date(start + 'T00:00:00.000Z').toISOString();
+    const endDate = new Date(end + 'T23:59:59.999Z').toISOString();
+    return [startDate, endDate]
+}
+
 
 function toAPIResponse(field, data) {
     return {
