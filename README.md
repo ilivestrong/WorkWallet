@@ -1,4 +1,4 @@
-# DEEL TASK
+# Work Wallet
 
 💫 Welcome!!! 🎉
 
