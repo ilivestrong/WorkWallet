@@ -42,6 +42,35 @@ app.get('/contracts', getProfile, async (req, res) => {
     res.status(200).send(toAPIResponse('contracts', contracts));
 });
 
+/**
+ * 
+ * @returns contract by id
+ */
+app.get('/jobs/unpaid', getProfile, async (req, res) => {
+    const { Contract, Job } = req.app.get('models');
+    const { dataValues: { id: profile_id } } = req.profile;
+    const contractsWithUnpaidJobs = await Contract.findAll(
+        {
+            include: {
+                model: Job,
+                where: { paid: true }
+            },
+            where: {
+                [Op.or]: [{ ContractorId: profile_id }, { ClientId: profile_id }],
+                status: { [Op.ne]: ['terminated'] }
+            }
+        }
+    );
+
+    if (contractsWithUnpaidJobs.length < 1) return res.status(404).end();
+    let unpaidJobs = contractsWithUnpaidJobs.reduce(
+        (allJobs, { dataValues: { Jobs } }) => {
+            allJobs.push(...Jobs);
+            return allJobs
+        }, []);
+    res.status(200).send(toAPIResponse('unpaid_jobs', unpaidJobs));
+});
+
 function toAPIResponse(field, data) {
     return {
         result: {
