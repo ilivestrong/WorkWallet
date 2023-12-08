@@ -44,7 +44,7 @@ app.get('/contracts', getProfile, async (req, res) => {
 
 /**
  * 
- * @returns contract by id
+ * @returns Array of unpaid jobs for calling profile
  */
 app.get('/jobs/unpaid', getProfile, async (req, res) => {
     const { Contract, Job } = req.app.get('models');
@@ -72,8 +72,8 @@ app.get('/jobs/unpaid', getProfile, async (req, res) => {
 });
 
 /**
- * 
- * @returns pay for job
+ * pay for a job
+ * @returns success or failure
  */
 app.post('/jobs/:job_id/pay', async (req, res) => {
     const { Contract, Profile, Job } = req.app.get('models')
@@ -120,8 +120,8 @@ app.post('/jobs/:job_id/pay', async (req, res) => {
 });
 
 /**
- * 
- * @returns contract by id
+ * Deposit money into client account, max 25% of their in_progress unpaid jobs
+ * @returns success or failure 
  */
 app.post('/balances/deposit/:userId', async (req, res) => {
     const { Contract, Profile, Job } = req.app.get('models');
@@ -165,7 +165,7 @@ app.post('/balances/deposit/:userId', async (req, res) => {
 
 /**
  * 
- * @returns contract by id
+ * @returns best performing profession in a given date range
  */
 app.get('/admin/best-profession', async (req, res) => {
     const { Profile, Contract, Job } = req.app.get('models');
@@ -211,8 +211,7 @@ app.get('/admin/best-profession', async (req, res) => {
 });
 
 /**
- * 
- * @returns contract by id
+ * @returns best highest paying client for the jobs in a given date range
  */
 app.get('/admin/best-clients', async (req, res) => {
     const { Profile, Contract, Job } = req.app.get('models');
@@ -257,13 +256,24 @@ app.get('/admin/best-clients', async (req, res) => {
     }
 });
 
+/**
+ * Formats start and end date string to UTC based values.
+ * @param {*} start 
+ * @param {*} end 
+ * @returns 
+ */
 function toUTCDates(start, end) {
     const startDate = new Date(start + 'T00:00:00.000Z').toISOString();
     const endDate = new Date(end + 'T23:59:59.999Z').toISOString();
     return [startDate, endDate]
 }
 
-
+/**
+ * formats API response as either success or error
+ * @param {*} field 
+ * @param {*} data 
+ * @returns success or error response nested inside result prop
+ */
 function toAPIResponse(field, data) {
     return {
         result: {
