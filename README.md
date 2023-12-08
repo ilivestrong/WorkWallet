@@ -1,12 +1,15 @@
-# DEEL BACKEND TASK
+# DEEL TASK
 
 💫 Welcome! 🎉
 
-This backend exercise involves building a Node.js/Express.js app that will serve a REST API. We imagine you should spend around 3 hours at implement this feature.
+DEEL Task is a set of RESTful APIs, which simulate a Client-Contractor relationship. Clients have contracts, each of which contain one or more jobs. Each job is assignable to a Contractor. Upon completion of a job, the contractor gets paid. There is an option to fill client's wallet through which payment is made to contractors. There are 2 other analytical APIs which give best performing contractor profession, and top paying client.
 
-## Data Models
-
-> **All models are defined in src/model.js**
+## Tech Stack
+- `Node.js`
+- `JavaScript`
+- `Express.js`
+- `Sqlite3`
+- `Sequelize`
 
 ### Profile
 
@@ -24,34 +27,21 @@ Contracts group jobs within them.
 
 contractor get paid for jobs by clients under a certain contract.
 
-## Getting Set Up
 
-The exercise requires [Node.js](https://nodejs.org/en/) to be installed. We recommend using the LTS version.
-
-1. Start by creating a local repository for this folder.
-
-1. In the repo root directory, run `npm install` to gather all dependencies.
-
-1. Next, `npm run seed` will seed the local SQLite database. **Warning: This will drop the database if it exists**. The database lives in a local file `database.sqlite3`.
-
-1. Then run `npm start` which should start both the server and the React client.
-
-❗️ **Make sure you commit all changes to the master branch!**
-
-## Technical Notes
+## Notes
 
 - The server is running with [nodemon](https://nodemon.io/) which will automatically restart for you when you modify and save a file.
 
-- The database provider is SQLite, which will store data in a file local to your repository called `database.sqlite3`. The ORM [Sequelize](http://docs.sequelizejs.com/) is on top of it. You should only have to interact with Sequelize - **please spend some time reading sequelize documentation before starting the exercise.**
+- The database provider is SQLite, which will store data in a file local to your repository called `database.sqlite3`. The ORM [Sequelize](http://docs.sequelizejs.com/) is on top of it.
 
-- To authenticate users use the `getProfile` middleware that is located under src/middleware/getProfile.js. users are authenticated by passing `profile_id` in the request header. after a user is authenticated his profile will be available under `req.profile`. make sure only users that are on the contract can access their contracts.
+- To authenticate users use the `getProfile` middleware that is located under src/middleware/getProfile.js. users are authenticated by passing `profile_id` in the request header. after a user is authenticated his profile will be available under `req.profile`. Only users that are on the contract can access their contracts.
 - The server is running on port 3001.
 
-## APIs To Implement
+## APIs Implemented
 
-Below is a list of the required API's for the application.
+Below is a list of the API's implemented for the application.
 
-1. **_GET_** `/contracts/:id` - This API is broken 😵! it should return the contract only if it belongs to the profile calling. better fix that!
+1. **_GET_** `/contracts/:id` - It should returns the contract only if it belongs to the profile calling.
 
 1. **_GET_** `/contracts` - Returns a list of contracts belonging to a user (client or contractor), the list should only contain non terminated contracts.
 
@@ -65,34 +55,4 @@ Below is a list of the required API's for the application.
 
 1. **_GET_** `/admin/best-clients?start=<date>&end=<date>&limit=<integer>` - returns the clients the paid the most for jobs in the query time period. limit query parameter should be applied, default limit is 2.
 
-```
- [
-    {
-        "id": 1,
-        "fullName": "Reece Moyer",
-        "paid" : 100.3
-    },
-    {
-        "id": 200,
-        "fullName": "Debora Martin",
-        "paid" : 99
-    },
-    {
-        "id": 22,
-        "fullName": "Debora Martin",
-        "paid" : 21
-    }
-]
-```
 
-## Going Above and Beyond the Requirements
-
-Given the time expectations of this exercise, we don't expect anyone to submit anything super fancy, but if you find yourself with extra time, any extra credit item(s) that showcase your unique strengths would be awesome! 🙌
-
-It would be great for example if you'd write some unit test / simple frontend demostrating calls to your fresh APIs.
-
-## Submitting the Assignment
-
-When you have finished the assignment, zip your repo (make sure to include .git folder) and send us the zip.
-
-Thank you and good luck! 🙏
