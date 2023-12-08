@@ -71,6 +71,54 @@ app.get('/jobs/unpaid', getProfile, async (req, res) => {
     res.status(200).send(toAPIResponse('unpaid_jobs', unpaidJobs));
 });
 
+/**
+ * 
+ * @returns pay for job
+ */
+app.post('/jobs/:job_id/pay', async (req, res) => {
+    const { Contract, Profile, Job } = req.app.get('models')
+    const { job_id: jobId } = req.params
+    const t = await sequelize.transaction();
+    try {
+        const job = await Job.findByPk(jobId, {
+            include: {
+                model: Contract,
+                include: [
+                    { model: Profile, as: 'Contractor' },
+                    { model: Profile, as: 'Client' }
+                ]
+            },
+            transaction: t
+        });
+
+        if (!job || job.paid) {
+            return res.status(404).send(toAPIResponse('error', 'job not found or already paid'));
+        }
+
+        const client = job.Contract.Client;
+        const contractor = job.Contract.Contractor;
+
+        if (client.balance < job.price) {
+            return res.status(422).send(toAPIResponse('error', 'failed to pay, insufficient funds'));
+        }
+
+        client.balance -= job.price;
+        contractor.balance += job.price;
+        job.paid = true;
+        job.paymentDate = new Date().toISOString();
+        job.updatedAt = new Date().toISOString();
+
+        await client.save({ transaction: t });
+        await contractor.save({ transaction: t });
+        await job.save({ transaction: t });
+        t.commit();
+        return res.status(200).send(toAPIResponse('success', true));
+    } catch (error) {
+        t.rollback();
+        res.status(400).send(error.message);
+    }
+});
+
 function toAPIResponse(field, data) {
     return {
         result: {
