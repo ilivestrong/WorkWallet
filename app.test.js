@@ -66,6 +66,27 @@ describe('GET /jobs/unpaid', () => {
 
         expect(response.statusCode).toBe(401);
     });
+});
 
-   
+describe('POST /balances/deposit/:userId', () => {
+    it('should successfully deposit funds if less than 25% of current unpaid jobs', async () => {
+        const userId = 2; //profile is client
+        const paymentAmount = 100;
+        const response = await request(app)
+            .post(`/balances/deposit/${userId}`)
+            .send({ amount: paymentAmount });
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body.result).toHaveProperty('success', true)
+    });
+    it('should successfully deposit funds if less than 25% of current unpaid jobs', async () => {
+        const userId = 2; //profile is client
+        const paymentAmount = 5000;
+        const response = await request(app)
+            .post(`/balances/deposit/${userId}`)
+            .send({ amount: paymentAmount });
+
+        expect(response.statusCode).toBe(500);
+        expect(response.body.result).toHaveProperty('error', 'Deposit exceeds the maximum allowed limit ')
+    });
 });
